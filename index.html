@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relationship Degree Quest</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Fredoka', sans-serif; }
+    .mono { font-family: 'Space Mono', monospace; }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.4); }
+      50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.8); }
+    }
+    
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateX(-30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes bounce-in {
+      0% { transform: scale(0.3); opacity: 0; }
+      50% { transform: scale(1.05); }
+      70% { transform: scale(0.9); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    @keyframes confetti {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100px) rotate(720deg); opacity: 0; }
+    }
+    
+    .float { animation: float 3s ease-in-out infinite; }
+    .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+    .slide-in { animation: slide-in 0.5s ease-out forwards; }
+    .bounce-in { animation: bounce-in 0.6s ease-out forwards; }
+    
+    .entity-box {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      border-radius: 12px;
+      padding: 16px 24px;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+    
+    .relationship-diamond {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+      transform: rotate(45deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+    }
+    
+    .relationship-text {
+      transform: rotate(-45deg);
+      font-size: 10px;
+      font-weight: 600;
+      color: white;
+      text-align: center;
+    }
+    
+    .connection-line {
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1, #f59e0b);
+      flex: 1;
+    }
+    
+    .option-btn {
+      transition: all 0.3s ease;
+      border: 3px solid transparent;
+    }
+    
+    .option-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .option-btn.selected {
+      border-color: #6366f1;
+      background: #eef2ff;
+    }
+    
+    .option-btn.correct {
+      border-color: #10b981;
+      background: #d1fae5;
+    }
+    
+    .option-btn.incorrect {
+      border-color: #ef4444;
+      background: #fee2e2;
+    }
+    
+    .progress-bar {
+      background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7);
+      transition: width 0.5s ease;
+    }
+    
+    .stage-badge {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+    }
+    
+    .leaderboard-row:nth-child(1) .rank-badge { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+    .leaderboard-row:nth-child(2) .rank-badge { background: linear-gradient(135deg, #9ca3af, #6b7280); }
+    .leaderboard-row:nth-child(3) .rank-badge { background: linear-gradient(135deg, #d97706, #b45309); }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-800 overflow-auto">
+  <div id="app" class="h-full w-full"><!-- Welcome Screen -->
+   <div id="welcome-screen" class="min-h-full flex flex-col items-center justify-center p-6">
+    <div class="text-center max-w-2xl">
+     <div class="text-8xl mb-6 float">
+      🎮
+     </div>
+     <h1 id="main-title" class="text-5xl font-bold text-white mb-4 drop-shadow-lg">Relationship Degree Quest</h1>
+     <p id="welcome-text" class="text-xl text-indigo-200 mb-8">Master the art of database relationships through an epic adventure!</p>
+     <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8"><input type="text" id="player-name-input" placeholder="Enter your name, brave scholar!" class="w-full px-6 py-4 rounded-xl text-lg text-center bg-white text-indigo-900 font-semibold placeholder-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-400">
+     </div><button id="start-btn" onclick="startJourney()" class="px-12 py-4 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xl font-bold rounded-xl hover:from-amber-500 hover:to-orange-600 transition-all transform hover:scale-105 shadow-lg pulse-glow"> 🚀 Begin Your Quest! </button>
+     <div class="mt-8 flex justify-center gap-4"><button onclick="showLeaderboard()" class="px-6 py-3 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all"> 🏆 Leaderboard </button>
+     </div>
+    </div>
+   </div><!-- Learning Stages -->
+   <div id="learning-screen" class="hidden min-h-full p-6">
+    <div class="max-w-4xl mx-auto"><!-- Progress Header -->
+     <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 mb-6">
+      <div class="flex items-center justify-between mb-3"><span id="stage-indicator" class="text-white font-semibold">Stage 1 of 4</span> <span id="player-display" class="text-indigo-200">Player: Student</span>
+      </div>
+      <div class="h-3 bg-indigo-950 rounded-full overflow-hidden">
+       <div id="progress-bar" class="progress-bar h-full rounded-full" style="width: 0%"></div>
+      </div>
+     </div><!-- Stage Content -->
+     <div id="stage-content" class="bg-white rounded-2xl shadow-2xl overflow-hidden"><!-- Content will be dynamically inserted -->
+     </div><!-- Navigation -->
+     <div class="flex justify-between mt-6"><button id="prev-btn" onclick="prevStage()" class="px-6 py-3 bg-white/20 text-white rounded-xl hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"> ← Previous </button> <button id="next-btn" onclick="nextStage()" class="px-8 py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold rounded-xl hover:from-amber-500 hover:to-orange-600 transition-all"> Next → </button>
+     </div>
+    </div>
+   </div><!-- Quiz Screen -->
+   <div id="quiz-screen" class="hidden min-h-full p-6">
+    <div class="max-w-3xl mx-auto"><!-- Quiz Header -->
+     <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 mb-6">
+      <div class="flex items-center justify-between mb-3"><span class="text-white font-semibold">🎯 Final Challenge</span> <span id="quiz-progress" class="text-indigo-200">Question 1/20</span>
+      </div>
+      <div class="flex items-center gap-4">
+       <div class="flex-1 h-3 bg-indigo-950 rounded-full overflow-hidden">
+        <div id="quiz-progress-bar" class="progress-bar h-full rounded-full" style="width: 5%"></div>
+       </div><span id="quiz-timer" class="text-amber-400 font-mono font-bold">00:00</span>
+      </div>
+     </div><!-- Question Card -->
+     <div id="question-card" class="bg-white rounded-2xl shadow-2xl p-8"><!-- Question content will be dynamically inserted -->
+     </div><!-- Quiz Navigation -->
+     <div class="flex justify-center mt-6"><button id="submit-answer-btn" onclick="submitAnswer()" class="px-10 py-4 bg-gradient-to-r from-emerald-400 to-teal-500 text-white font-bold text-lg rounded-xl hover:from-emerald-500 hover:to-teal-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"> Submit Answer </button>
+     </div>
+    </div>
+   </div><!-- Results Screen -->
+   <div id="results-screen" class="hidden min-h-full flex items-center justify-center p-6">
+    <div class="max-w-2xl w-full text-center">
+     <div id="results-content"><!-- Results will be dynamically inserted -->
+     </div>
+    </div>
+   </div><!-- Leaderboard Screen -->
+   <div id="leaderboard-screen" class="hidden min-h-full p-6">
+    <div class="max-w-2xl mx-auto">
+     <div class="text-center mb-8">
+      <div class="text-6xl mb-4">
+       🏆
+      </div>
+      <h2 class="text-4xl font-bold text-white mb-2">Hall of Fame</h2>
+      <p class="text-indigo-200">Top Database Relationship Masters</p>
+     </div>
+     <div id="leaderboard-content" class="bg-white rounded-2xl shadow-2xl p-6">
+      <p class="text-center text-gray-500 py-8">Loading leaderboard...</p>
+     </div>
+     <div class="flex justify-center mt-6"><button onclick="hideLeaderboard()" class="px-8 py-3 bg-white/20 text-white font-semibold rounded-xl hover:bg-white/30 transition-all"> ← Back to Home </button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    // Default configuration
+    const defaultConfig = {
+      game_title: "Relationship Degree Quest",
+      welcome_message: "Master the art of database relationships through an epic adventure!",
+      primary_color: "#4f46e5",
+      secondary_color: "#1e1b4b",
+      accent_color: "#f59e0b",
+      text_color: "#ffffff",
+      surface_color: "#ffffff"
+    };
+
+    let config = { ...defaultConfig };
+    let playerName = "";
+    let currentStage = 0;
+    let currentQuestion = 0;
+    let selectedAnswer = null;
+    let score = 0;
+    let quizStartTime = null;
+    let timerInterval = null;
+    let leaderboardData = [];
+    let isSubmitting = false;
+
+    // Learning content for each stage
+    const stages = [
+      {
+        title: "🎯 One-to-One (1:1)",
+        subtitle: "The Exclusive Partnership",
+        emoji: "💑",
+        description: "In a One-to-One relationship, one entity instance is associated with exactly one instance of another entity. It's like a perfect match - one person, one passport!",
+        examples: [
+          { left: "Person", right: "Passport", explanation: "Each person has exactly one passport, and each passport belongs to exactly one person." },
+          { left: "Country", right: "Capital City", explanation: "Each country has one capital city, and each capital belongs to one country." },
+          { left: "Employee", right: "Company Car", explanation: "Each employee is assigned one company car (if any), and each car is assigned to one employee." }
+        ],
+        notation: "1 ←→ 1",
+        realWorld: "Think of it as a 'soulmate' relationship in databases - exclusive and committed! 💕",
+        challenge: {
+          question: "Which of these is a One-to-One relationship?",
+          options: [
+            "Student - Courses",
+            "Person - National ID",
+            "Teacher - Students",
+            "Book - Authors"
+          ],
+          correct: 1,
+          explanation: "A Person has exactly one National ID, and each National ID belongs to one Person!"
+        }
+      },
+      {
+        title: "📚 One-to-Many (1:N)",
+        subtitle: "The Generous Leader",
+        emoji: "👨‍👧‍👦",
+        description: "In a One-to-Many relationship, one entity instance can be associated with many instances of another entity. Think of a mother hen with her chicks! 🐔🐣",
+        examples: [
+          { left: "Department", right: "Employees", explanation: "One department has many employees, but each employee belongs to one department." },
+          { left: "Customer", right: "Orders", explanation: "One customer can place many orders, but each order belongs to one customer." },
+          { left: "Author", right: "Blog Posts", explanation: "One author can write many blog posts, but each post has one author." }
+        ],
+        notation: "1 ←→ N",
+        realWorld: "It's like a playlist owner and songs - you have many songs, but each song in YOUR playlist belongs to YOUR collection! 🎵",
+        challenge: {
+          question: "Which represents a One-to-Many relationship?",
+          options: [
+            "Person - Spouse",
+            "Teacher - Classes taught",
+            "Student - Student ID",
+            "Country - UN Membership"
+          ],
+          correct: 1,
+          explanation: "One teacher can teach many classes, but typically each class section is assigned to one teacher!"
+        }
+      },
+      {
+        title: "🔄 Many-to-One (N:1)",
+        subtitle: "The Convergent Connection",
+        emoji: "🎯",
+        description: "Many-to-One is the flip side of One-to-Many! Many entity instances relate to one instance of another entity. Many arrows, one target! 🎯",
+        examples: [
+          { left: "Employees", right: "Manager", explanation: "Many employees report to one manager." },
+          { left: "Products", right: "Category", explanation: "Many products belong to one category." },
+          { left: "Students", right: "Advisor", explanation: "Many students are assigned to one academic advisor." }
+        ],
+        notation: "N ←→ 1",
+        realWorld: "Think of many bees returning to one hive - everyone has their home base! 🐝🏠",
+        challenge: {
+          question: "Which shows a Many-to-One relationship?",
+          options: [
+            "Books written by multiple authors",
+            "Students enrolling in many courses",
+            "Citizens belonging to one country",
+            "One passport per person"
+          ],
+          correct: 2,
+          explanation: "Many citizens (N) belong to one country (1) - that's Many-to-One!"
+        }
+      },
+      {
+        title: "🌐 Many-to-Many (M:N)",
+        subtitle: "The Social Network",
+        emoji: "🕸️",
+        description: "In a Many-to-Many relationship, multiple instances of one entity can be associated with multiple instances of another entity. It's a web of connections! 🕸️",
+        examples: [
+          { left: "Students", right: "Courses", explanation: "Many students enroll in many courses, and many courses have many students." },
+          { left: "Authors", right: "Books", explanation: "Many authors can write many books (co-authored), and many books can have many authors." },
+          { left: "Actors", right: "Movies", explanation: "Many actors appear in many movies, and many movies feature many actors." }
+        ],
+        notation: "M ←→ N",
+        realWorld: "It's like social media friendships - you have many friends, and they each have many friends too! 👥",
+        challenge: {
+          question: "Which is a Many-to-Many relationship?",
+          options: [
+            "Person - Passport",
+            "Department - Employees",
+            "Products - Suppliers",
+            "Country - Capital"
+          ],
+          correct: 2,
+          explanation: "Many products can come from many suppliers, and many suppliers provide many products!"
+        }
+      }
+    ];
+
+    // Quiz questions (20 items)
+    const quizQuestions = [
+      {
+        question: "A Student can have only one Student ID, and each Student ID belongs to only one Student. What type of relationship is this?",
+        options: ["One-to-Many", "Many-to-One", "One-to-One", "Many-to-Many"],
+        correct: 2,
+        explanation: "This is a classic One-to-One (1:1) relationship - exclusive pairing!"
+      },
+      {
+        question: "In a library system, one Author can write many Books. What relationship type is this?",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 1,
+        explanation: "One Author → Many Books = One-to-Many (1:N)"
+      },
+      {
+        question: "Many Employees work in one Department. This represents a _____ relationship.",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 2,
+        explanation: "Many Employees → One Department = Many-to-One (N:1)"
+      },
+      {
+        question: "Students can enroll in multiple Courses, and each Course can have multiple Students. What type of relationship is this?",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 3,
+        explanation: "Multiple Students ↔ Multiple Courses = Many-to-Many (M:N)"
+      },
+      {
+        question: "Each Country has exactly one President at a time, and each President leads one Country. This is:",
+        options: ["Many-to-Many", "One-to-Many", "One-to-One", "Many-to-One"],
+        correct: 2,
+        explanation: "One Country ↔ One President = One-to-One (1:1)"
+      },
+      {
+        question: "A Mother can have many Children. What is this relationship type?",
+        options: ["One-to-One", "One-to-Many", "Many-to-Many", "Many-to-One"],
+        correct: 1,
+        explanation: "One Mother → Many Children = One-to-Many (1:N)"
+      },
+      {
+        question: "Many Products are supplied by one Supplier. This is a _____ relationship.",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 2,
+        explanation: "Many Products → One Supplier = Many-to-One (N:1)"
+      },
+      {
+        question: "Doctors can treat many Patients, and Patients can be treated by many Doctors. What relationship is this?",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 3,
+        explanation: "Multiple Doctors ↔ Multiple Patients = Many-to-Many (M:N)"
+      },
+      {
+        question: "In ER diagrams, which notation represents a Many-to-Many relationship?",
+        options: ["1:1", "1:N", "N:1", "M:N"],
+        correct: 3,
+        explanation: "M:N notation represents Many-to-Many relationships"
+      },
+      {
+        question: "A Person has one Social Security Number. The SSN belongs to one Person. This relationship is:",
+        options: ["Many-to-Many", "One-to-Many", "Many-to-One", "One-to-One"],
+        correct: 3,
+        explanation: "Exclusive pairing = One-to-One (1:1)"
+      },
+      {
+        question: "One Teacher teaches many Sections of a course. What type of relationship exists between Teacher and Sections?",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 1,
+        explanation: "One Teacher → Many Sections = One-to-Many (1:N)"
+      },
+      {
+        question: "Many Books belong to one Category (like Fiction, Non-Fiction). This represents:",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 2,
+        explanation: "Many Books → One Category = Many-to-One (N:1)"
+      },
+      {
+        question: "Actors appear in Movies, and Movies feature Actors. If an Actor can be in multiple Movies and a Movie can have multiple Actors, this is:",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 3,
+        explanation: "Multiple Actors ↔ Multiple Movies = Many-to-Many (M:N)"
+      },
+      {
+        question: "A Car has one License Plate. A License Plate is assigned to one Car. What relationship type is this?",
+        options: ["One-to-Many", "Many-to-Many", "One-to-One", "Many-to-One"],
+        correct: 2,
+        explanation: "One Car ↔ One License Plate = One-to-One (1:1)"
+      },
+      {
+        question: "A Bank Branch has many Accounts. What relationship exists between Branch and Accounts?",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 1,
+        explanation: "One Branch → Many Accounts = One-to-Many (1:N)"
+      },
+      {
+        question: "Multiple Orders are placed by one Customer. From the Order's perspective to Customer, this is:",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 2,
+        explanation: "Many Orders → One Customer = Many-to-One (N:1)"
+      },
+      {
+        question: "Skills can be possessed by many Employees, and Employees can have many Skills. This is:",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 3,
+        explanation: "Multiple Skills ↔ Multiple Employees = Many-to-Many (M:N)"
+      },
+      {
+        question: "Which relationship type typically requires a junction/bridge table in a relational database?",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 3,
+        explanation: "Many-to-Many relationships need a junction table to manage the complex associations!"
+      },
+      {
+        question: "A CEO manages one Company. A Company has one CEO. This demonstrates:",
+        options: ["Many-to-Many", "One-to-Many", "One-to-One", "Many-to-One"],
+        correct: 2,
+        explanation: "One CEO ↔ One Company = One-to-One (1:1)"
+      },
+      {
+        question: "In a university system: Professors advise Students. If each Student has one Advisor but each Professor can advise many Students, what is the relationship from Professor to Student?",
+        options: ["One-to-One", "One-to-Many", "Many-to-One", "Many-to-Many"],
+        correct: 1,
+        explanation: "One Professor → Many Students = One-to-Many (1:N) from the Professor's perspective"
+      }
+    ];
+
+    // Shuffle array helper
+    function shuffleArray(array) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    // Initialize SDK
+    const dataHandler = {
+      onDataChanged(data) {
+        leaderboardData = data.sort((a, b) => {
+          if (b.quiz_score !== a.quiz_score) return b.quiz_score - a.quiz_score;
+          return a.time_taken_seconds - b.time_taken_seconds;
+        });
+        updateLeaderboardUI();
+      }
+    };
+
+    async function initApp() {
+      // Initialize Element SDK
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange: async (newConfig) => {
+            config = { ...defaultConfig, ...newConfig };
+            updateUI();
+          },
+          mapToCapabilities: (cfg) => ({
+            recolorables: [
+              {
+                get: () => cfg.primary_color || defaultConfig.primary_color,
+                set: (v) => { cfg.primary_color = v; window.elementSdk.setConfig({ primary_color: v }); }
+              },
+              {
+                get: () => cfg.secondary_color || defaultConfig.secondary_color,
+                set: (v) => { cfg.secondary_color = v; window.elementSdk.setConfig({ secondary_color: v }); }
+              },
+              {
+                get: () => cfg.accent_color || defaultConfig.accent_color,
+                set: (v) => { cfg.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); }
+              },
+              {
+                get: () => cfg.text_color || defaultConfig.text_color,
+                set: (v) => { cfg.text_color = v; window.elementSdk.setConfig({ text_color: v }); }
+              },
+              {
+                get: () => cfg.surface_color || defaultConfig.surface_color,
+                set: (v) => { cfg.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); }
+              }
+            ],
+            borderables: [],
+            fontEditable: undefined,
+            fontSizeable: undefined
+          }),
+          mapToEditPanelValues: (cfg) => new Map([
+            ["game_title", cfg.game_title || defaultConfig.game_title],
+            ["welcome_message", cfg.welcome_message || defaultConfig.welcome_message]
+          ])
+        });
+      }
+
+      // Initialize Data SDK
+      if (window.dataSdk) {
+        await window.dataSdk.init(dataHandler);
+      }
+    }
+
+    function updateUI() {
+      document.getElementById('main-title').textContent = config.game_title || defaultConfig.game_title;
+      document.getElementById('welcome-text').textContent = config.welcome_message || defaultConfig.welcome_message;
+    }
+
+    function updateLeaderboardUI() {
+      const container = document.getElementById('leaderboard-content');
+      if (!leaderboardData || leaderboardData.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12">
+            <div class="text-6xl mb-4">📭</div>
+            <p class="text-gray-500 text-lg">No champions yet!</p>
+            <p class="text-gray-400">Be the first to complete the quest!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="space-y-3">
+          ${leaderboardData.slice(0, 10).map((entry, index) => `
+            <div class="leaderboard-row flex items-center gap-4 p-4 rounded-xl ${index < 3 ? 'bg-gradient-to-r from-amber-50 to-orange-50' : 'bg-gray-50'}">
+              <div class="rank-badge w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${index >= 3 ? 'bg-indigo-500' : ''}">
+                ${index < 3 ? ['👑', '🥈', '🥉'][index] : index + 1}
+              </div>
+              <div class="flex-1">
+                <p class="font-semibold text-gray-800">${entry.player_name}</p>
+                <p class="text-sm text-gray-500">Time: ${formatTime(entry.time_taken_seconds)}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-2xl font-bold text-indigo-600">${entry.quiz_score}/${entry.total_questions}</p>
+                <p class="text-sm text-gray-500">${Math.round((entry.quiz_score / entry.total_questions) * 100)}%</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function showScreen(screenId) {
+      ['welcome-screen', 'learning-screen', 'quiz-screen', 'results-screen', 'leaderboard-screen'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    function startJourney() {
+      const nameInput = document.getElementById('player-name-input');
+      playerName = nameInput.value.trim() || 'Anonymous Scholar';
+      currentStage = 0;
+      showScreen('learning-screen');
+      renderStage();
+    }
+
+    function renderStage() {
+      const stage = stages[currentStage];
+      document.getElementById('stage-indicator').textContent = `Stage ${currentStage + 1} of ${stages.length}`;
+      document.getElementById('player-display').textContent = `Player: ${playerName}`;
+      document.getElementById('progress-bar').style.width = `${((currentStage + 1) / stages.length) * 100}%`;
+      
+      document.getElementById('prev-btn').disabled = currentStage === 0;
+      document.getElementById('next-btn').textContent = currentStage === stages.length - 1 ? '🎯 Take the Quiz!' : 'Next →';
+
+      const content = document.getElementById('stage-content');
+      content.innerHTML = `
+        <div class="p-8">
+          <!-- Header -->
+          <div class="text-center mb-8">
+            <span class="stage-badge text-white text-sm px-4 py-2 rounded-full">Stage ${currentStage + 1}</span>
+            <div class="text-6xl my-4">${stage.emoji}</div>
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">${stage.title}</h2>
+            <p class="text-lg text-indigo-600 font-semibold">${stage.subtitle}</p>
+          </div>
+
+          <!-- Description -->
+          <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 mb-8">
+            <p class="text-gray-700 text-lg leading-relaxed">${stage.description}</p>
+            <div class="mt-4 flex items-center justify-center">
+              <span class="mono text-2xl font-bold text-indigo-600 bg-white px-6 py-2 rounded-lg shadow">${stage.notation}</span>
+            </div>
+          </div>
+
+          <!-- Examples -->
+          <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span>📝</span> Real-World Examples
+          </h3>
+          <div class="space-y-4 mb-8">
+            ${stage.examples.map((ex, i) => `
+              <div class="slide-in bg-white border-2 border-indigo-100 rounded-xl p-4" style="animation-delay: ${i * 0.1}s">
+                <div class="flex items-center justify-center gap-4 mb-3">
+                  <div class="entity-box text-center">${ex.left}</div>
+                  <div class="connection-line"></div>
+                  <div class="relationship-diamond">
+                    <span class="relationship-text">${stage.notation}</span>
+                  </div>
+                  <div class="connection-line"></div>
+                  <div class="entity-box text-center">${ex.right}</div>
+                </div>
+                <p class="text-gray-600 text-center text-sm">${ex.explanation}</p>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Fun Fact -->
+          <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-xl p-4 mb-8">
+            <p class="text-amber-800 flex items-start gap-2">
+              <span class="text-xl">💡</span>
+              <span>${stage.realWorld}</span>
+            </p>
+          </div>
+
+          <!-- Mini Challenge -->
+          <div class="bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl p-6">
+            <h3 class="text-xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
+              <span>🧩</span> Quick Challenge!
+            </h3>
+            <p class="text-gray-700 mb-4">${stage.challenge.question}</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="challenge-options">
+              ${stage.challenge.options.map((opt, i) => `
+                <button onclick="checkChallenge(${i}, ${stage.challenge.correct})" 
+                  class="challenge-option option-btn p-4 bg-white rounded-xl text-left text-gray-700 hover:bg-indigo-50 transition-all">
+                  <span class="font-bold text-indigo-500 mr-2">${String.fromCharCode(65 + i)}.</span>
+                  ${opt}
+                </button>
+              `).join('')}
+            </div>
+            <div id="challenge-feedback" class="hidden mt-4 p-4 rounded-xl"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function checkChallenge(selected, correct) {
+      const options = document.querySelectorAll('.challenge-option');
+      const feedback = document.getElementById('challenge-feedback');
+      
+      options.forEach((opt, i) => {
+        opt.disabled = true;
+        opt.classList.remove('selected');
+        if (i === correct) {
+          opt.classList.add('correct');
+        } else if (i === selected && selected !== correct) {
+          opt.classList.add('incorrect');
+        }
+      });
+
+      feedback.classList.remove('hidden');
+      if (selected === correct) {
+        feedback.className = 'mt-4 p-4 rounded-xl bg-emerald-100 text-emerald-800';
+        feedback.innerHTML = `<span class="font-bold">🎉 Correct!</span> ${stages[currentStage].challenge.explanation}`;
+      } else {
+        feedback.className = 'mt-4 p-4 rounded-xl bg-red-100 text-red-800';
+        feedback.innerHTML = `<span class="font-bold">❌ Not quite!</span> ${stages[currentStage].challenge.explanation}`;
+      }
+    }
+
+    function prevStage() {
+      if (currentStage > 0) {
+        currentStage--;
+        renderStage();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function nextStage() {
+      if (currentStage < stages.length - 1) {
+        currentStage++;
+        renderStage();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        startQuiz();
+      }
+    }
+
+    function startQuiz() {
+      currentQuestion = 0;
+      selectedAnswer = null;
+      score = 0;
+      quizStartTime = Date.now();
+      showScreen('quiz-screen');
+      renderQuestion();
+      startTimer();
+    }
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - quizStartTime) / 1000);
+        document.getElementById('quiz-timer').textContent = formatTime(elapsed);
+      }, 1000);
+    }
+
+    function renderQuestion() {
+      const q = quizQuestions[currentQuestion];
+      document.getElementById('quiz-progress').textContent = `Question ${currentQuestion + 1}/${quizQuestions.length}`;
+      document.getElementById('quiz-progress-bar').style.width = `${((currentQuestion + 1) / quizQuestions.length) * 100}%`;
+      
+      const card = document.getElementById('question-card');
+      card.innerHTML = `
+        <div class="mb-6">
+          <span class="text-indigo-500 font-semibold">Question ${currentQuestion + 1}</span>
+          <h3 class="text-xl font-bold text-gray-800 mt-2">${q.question}</h3>
+        </div>
+        <div class="space-y-3" id="quiz-options">
+          ${q.options.map((opt, i) => `
+            <button onclick="selectQuizAnswer(${i})" 
+              class="quiz-option option-btn w-full p-4 bg-gray-50 rounded-xl text-left text-gray-700 hover:bg-indigo-50 transition-all flex items-center gap-3">
+              <span class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center">${String.fromCharCode(65 + i)}</span>
+              <span>${opt}</span>
+            </button>
+          `).join('')}
+        </div>
+        <div id="quiz-feedback" class="hidden mt-6 p-4 rounded-xl"></div>
+      `;
+      
+      document.getElementById('submit-answer-btn').disabled = true;
+      document.getElementById('submit-answer-btn').textContent = 'Submit Answer';
+    }
+
+    function selectQuizAnswer(index) {
+      selectedAnswer = index;
+      const options = document.querySelectorAll('.quiz-option');
+      options.forEach((opt, i) => {
+        opt.classList.remove('selected');
+        if (i === index) opt.classList.add('selected');
+      });
+      document.getElementById('submit-answer-btn').disabled = false;
+    }
+
+    function submitAnswer() {
+      if (selectedAnswer === null) return;
+      
+      const q = quizQuestions[currentQuestion];
+      const options = document.querySelectorAll('.quiz-option');
+      const feedback = document.getElementById('quiz-feedback');
+      const submitBtn = document.getElementById('submit-answer-btn');
+      
+      options.forEach((opt, i) => {
+        opt.disabled = true;
+        opt.classList.remove('selected');
+        if (i === q.correct) {
+          opt.classList.add('correct');
+        } else if (i === selectedAnswer && selectedAnswer !== q.correct) {
+          opt.classList.add('incorrect');
+        }
+      });
+
+      feedback.classList.remove('hidden');
+      if (selectedAnswer === q.correct) {
+        score++;
+        feedback.className = 'mt-6 p-4 rounded-xl bg-emerald-100 text-emerald-800';
+        feedback.innerHTML = `<span class="font-bold">🎉 Correct!</span> ${q.explanation}`;
+      } else {
+        feedback.className = 'mt-6 p-4 rounded-xl bg-red-100 text-red-800';
+        feedback.innerHTML = `<span class="font-bold">❌ Not quite!</span> ${q.explanation}`;
+      }
+
+      submitBtn.disabled = false;
+      if (currentQuestion < quizQuestions.length - 1) {
+        submitBtn.textContent = 'Next Question →';
+        submitBtn.onclick = () => {
+          currentQuestion++;
+          selectedAnswer = null;
+          renderQuestion();
+          submitBtn.onclick = submitAnswer;
+        };
+      } else {
+        submitBtn.textContent = '🏆 See Results!';
+        submitBtn.onclick = showResults;
+      }
+    }
+
+    async function showResults() {
+      if (timerInterval) clearInterval(timerInterval);
+      const timeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
+      const percentage = Math.round((score / quizQuestions.length) * 100);
+      
+      let grade, emoji, message;
+      if (percentage >= 90) {
+        grade = 'Database Master!';
+        emoji = '👑';
+        message = 'Outstanding! You truly understand relationship degrees!';
+      } else if (percentage >= 80) {
+        grade = 'Relationship Expert';
+        emoji = '🌟';
+        message = 'Excellent work! You have a strong grasp of the concepts!';
+      } else if (percentage >= 70) {
+        grade = 'Skilled Scholar';
+        emoji = '📚';
+        message = 'Good job! Keep practicing to master the relationships!';
+      } else if (percentage >= 60) {
+        grade = 'Rising Learner';
+        emoji = '🌱';
+        message = 'Nice effort! Review the stages to improve your understanding.';
+      } else {
+        grade = 'Brave Beginner';
+        emoji = '💪';
+        message = "Don't give up! Review the lessons and try again!";
+      }
+
+      showScreen('results-screen');
+      document.getElementById('results-content').innerHTML = `
+        <div class="bounce-in bg-white rounded-3xl shadow-2xl p-8">
+          <div class="text-8xl mb-4">${emoji}</div>
+          <h2 class="text-3xl font-bold text-gray-800 mb-2">${grade}</h2>
+          <p class="text-indigo-600 font-semibold mb-6">${playerName}</p>
+          
+          <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 mb-6">
+            <div class="text-6xl font-bold text-indigo-600 mb-2">${score}/${quizQuestions.length}</div>
+            <div class="text-2xl text-gray-600">${percentage}%</div>
+            <div class="text-gray-500 mt-2">⏱️ Time: ${formatTime(timeTaken)}</div>
+          </div>
+          
+          <p class="text-gray-600 mb-8">${message}</p>
+          
+          <div id="save-status" class="mb-6"></div>
+          
+          <div class="flex flex-col gap-3">
+            <button onclick="restartGame()" class="px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all">
+              🔄 Play Again
+            </button>
+            <button onclick="reviewLessons()" class="px-8 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all">
+              📖 Review Lessons
+            </button>
+            <button onclick="showLeaderboard()" class="px-8 py-3 bg-amber-100 text-amber-700 font-semibold rounded-xl hover:bg-amber-200 transition-all">
+              🏆 View Leaderboard
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Save score to leaderboard
+      await saveScore(timeTaken);
+    }
+
+    async function saveScore(timeTaken) {
+      if (!window.dataSdk || isSubmitting) return;
+      
+      if (leaderboardData.length >= 999) {
+        document.getElementById('save-status').innerHTML = `
+          <p class="text-amber-600 text-sm">⚠️ Leaderboard is full!</p>
+        `;
+        return;
+      }
+      
+      isSubmitting = true;
+      document.getElementById('save-status').innerHTML = `
+        <p class="text-indigo-500 text-sm">💾 Saving your score...</p>
+      `;
+      
+      const result = await window.dataSdk.create({
+        player_name: playerName,
+        quiz_score: score,
+        total_questions: quizQuestions.length,
+        completed_at: new Date().toISOString(),
+        time_taken_seconds: timeTaken
+      });
+      
+      isSubmitting = false;
+      
+      if (result.isOk) {
+        document.getElementById('save-status').innerHTML = `
+          <p class="text-emerald-500 text-sm">✅ Score saved to leaderboard!</p>
+        `;
+      } else {
+        document.getElementById('save-status').innerHTML = `
+          <p class="text-red-500 text-sm">❌ Could not save score</p>
+        `;
+      }
+    }
+
+    function restartGame() {
+      playerName = "";
+      currentStage = 0;
+      currentQuestion = 0;
+      selectedAnswer = null;
+      score = 0;
+      document.getElementById('player-name-input').value = '';
+      showScreen('welcome-screen');
+    }
+
+    function reviewLessons() {
+      currentStage = 0;
+      showScreen('learning-screen');
+      renderStage();
+    }
+
+    function showLeaderboard() {
+      showScreen('leaderboard-screen');
+      updateLeaderboardUI();
+    }
+
+    function hideLeaderboard() {
+      showScreen('welcome-screen');
+    }
+
+    // Initialize on load
+    initApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d2bbd3514f8fee1',t:'MTc3MTkwMjMwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
